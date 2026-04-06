@@ -28,7 +28,21 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 
 		ctx.Set("user_id", claims.UserID)
 		ctx.Set("business_id", claims.BusinessID)
+		ctx.Set("role", claims.Role) // Simpan role ke context
 
+		ctx.Next()
+	}
+}
+
+// RoleMiddleware membatasi akses endpoint berdasarkan role tertentu
+func RoleMiddleware(requiredRole string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		role := ctx.GetString("role")
+		if role != requiredRole {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": "akses ditolak, butuh role " + requiredRole})
+			ctx.Abort()
+			return
+		}
 		ctx.Next()
 	}
 }

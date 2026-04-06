@@ -58,6 +58,14 @@ func main() {
 	protected.Use(middleware.AuthMiddleware(secret))
 	{
 		protected.GET("/me", authHandler.GetProfile)
+
+		// Staff Management (Owner Only)
+		ownerOnly := protected.Group("/auth", middleware.RoleMiddleware("OWNER"))
+		{
+			ownerOnly.POST("/staff", authHandler.CreateStaff)
+			ownerOnly.GET("/staff", authHandler.GetStaff)
+		}
+
 		protected.POST("/products", productHandler.Create)
 		protected.GET("/products", productHandler.GetAll)
 		protected.GET("/products/:id", productHandler.GetByID)

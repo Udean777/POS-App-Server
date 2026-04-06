@@ -13,6 +13,7 @@ type User struct {
 	Password   string    `gorm:"not null" json:"-"`
 	BusinessID uuid.UUID `gorm:"type:uuid;not null" json:"business_id"`
 	Business   Business  `gorm:"foreignKey:BusinessID" json:"business"`
+	Role       string    `gorm:"not null;default:'OWNER'" json:"role"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 
@@ -39,10 +40,14 @@ type UserRepository interface {
 	Create(ctx context.Context, u *User, businessName string) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*User, error)
+	GetByBusinessID(ctx context.Context, businessID uuid.UUID) ([]User, error)
+	AddUser(ctx context.Context, user *User) error
 }
 
 type AuthUsecase interface {
 	Login(ctx context.Context, email string, password string) (string, error)
 	Register(ctx context.Context, email, password, bizName string) error
 	GetProfile(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
+	CreateStaff(ctx context.Context, email, password string, businessID uuid.UUID) error
+	GetStaff(ctx context.Context, businessID uuid.UUID) ([]UserResponse, error)
 }

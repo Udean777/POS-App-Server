@@ -59,11 +59,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetProfile(c *gin.Context) {
-	// Ambil user_id dari context middleware
 	userIDStr := c.GetString("user_id")
 	userID, _ := uuid.Parse(userIDStr)
 
-	// Panggil usecase untuk ambil data user & bisnis
 	user, err := h.AuthUsecase.GetProfile(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Profil tidak ditemukan"})
@@ -71,4 +69,45 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (h *AuthHandler) CreateStaff(c *gin.Context) {
+	var req struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "data tidak valid"})
+		return
+	}
+
+	// Ambil BusinessID dari requester (Owner) agar sama
+	bizIDStr := c.GetString("business_id")
+	businessID, _ := uuid.Parse(bizIDStr)
+
+	err := h.AuthUsecase.CreateStaff(c.Request.Context(), req.Email, req.Password, businessID)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Email sudah terdaftar"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mendaftarkan staf"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "staf berhasil didaftarkan"})
+}
+
+func (h *AuthHandler) GetStaff(c *gin.Context) {
+	bizIDStr := c.GetString("business_id")
+	businessID, _ := uuid.Parse(bizIDStr)
+
+	staff, err := h.AuthUsecase.GetStaff(c.Request.Context(), businessID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data staf"})
+		return
+	}
+
+	c.JSON(http.StatusOK, staff)
 }
