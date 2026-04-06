@@ -1,7 +1,10 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
+	"path/filepath"
+	"time"
 
 	"strings"
 
@@ -12,10 +15,47 @@ import (
 
 type ProductHandler struct {
 	ProductUsecase domain.ProductUsecase
+	StorageService domain.StorageService
 }
 
-func NewProductHandler(pu domain.ProductUsecase) *ProductHandler {
-	return &ProductHandler{ProductUsecase: pu}
+func NewProductHandler(pu domain.ProductUsecase, ss domain.StorageService) *ProductHandler {
+	return &ProductHandler{ProductUsecase: pu, StorageService: ss}
+}
+
+func (h *ProductHandler) Upload(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File tidak ditemukan"})
+		return
+	}
+
+	openedFile, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuka file"})
+		return
+	}
+	defer openedFile.Close()
+
+	fileSize := file.Size
+	fileBuffer := make([]byte, fileSize)
+	_, err = openedFile.Read(fileBuffer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membaca file"})
+		return
+	}
+
+	// Generate unique filename
+	ext := filepath.Ext(file.Filename)
+	fileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+	contentType := file.Header.Get("Content-Type")
+
+	url, err := h.StorageService.Upload(c.Request.Context(), fileBuffer, fileName, contentType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": url})
 }
 
 func (h *ProductHandler) Create(c *gin.Context) {

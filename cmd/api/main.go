@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/sajudin/pos-app-server/internal/delivery/http/middleware"
 	"github.com/sajudin/pos-app-server/internal/domain"
 	repo "github.com/sajudin/pos-app-server/internal/repository/postgres"
+	"github.com/sajudin/pos-app-server/internal/service"
 	"github.com/sajudin/pos-app-server/internal/usecase"
 	"gorm.io/driver/postgres"
 )
@@ -19,7 +21,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Warning: .env file not found, using system env")
 	}
 
 	dsn := os.Getenv("DB_URL")
@@ -41,6 +43,20 @@ func main() {
 	r.SetTrustedProxies(nil)
 	secret := os.Getenv("JWT_SECRET")
 
+	// Static files for local storage fallback
+	r.Static("/uploads", "./uploads")
+
+	// Initialize Storage Service (R2 or Local)
+	storageService, err := service.NewS3StorageService(context.Background())
+	if err != nil {
+		log.Println("R2 storage not configured, using local storage:", err)
+		publicURL := os.Getenv("APP_URL")
+		if publicURL == "" {
+			publicURL = "http://localhost:8080"
+		}
+		storageService = service.NewLocalStorageService(publicURL)
+	}
+
 	// Repositories
 	userRepo := repo.NewGormUserRepository(db)
 	productRepo := repo.NewGormProductRepository(db)
@@ -53,7 +69,7 @@ func main() {
 
 	// Handlers
 	authHandler := http.AuthHandler{AuthUsecase: authUsecase}
-	productHandler := http.NewProductHandler(productUsecase)
+	productHandler := http.NewProductHandler(productUsecase, storageService)
 	txHandler := http.NewTransactionHandler(txUsecase)
 
 	// Public Routes
@@ -77,6 +93,7 @@ func main() {
 		}
 
 		// Product Routes
+		protected.POST("/products/upload", productHandler.Upload)
 		protected.POST("/products", productHandler.Create)
 		protected.GET("/products", productHandler.GetAll)
 		protected.GET("/products/:id", productHandler.GetByID)

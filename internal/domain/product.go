@@ -13,6 +13,7 @@ type Product struct {
 	Name        string    `gorm:"not null" json:"name"`
 	Description string    `json:"description"`
 	Category    string    `json:"category"`
+	ImageURL    string    `json:"image_url"`
 	Variants    []Variant `gorm:"foreignKey:ProductID" json:"variants"`
 	CreatedAt   time.Time `json:"created_at"`
 }
@@ -41,4 +42,8 @@ type ProductUsecase interface {
 	GetProductByID(ctx context.Context, id uuid.UUID, businessID uuid.UUID) (*Product, error)
 	UpdateProduct(ctx context.Context, p *Product) error
 	DeleteProduct(ctx context.Context, id uuid.UUID, businessID uuid.UUID) error
+}
+
+type StorageService interface {
+	Upload(ctx context.Context, file []byte, fileName string, contentType string) (string, error)
 }
