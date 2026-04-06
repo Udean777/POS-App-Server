@@ -99,6 +99,10 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	}
 
 	if err := h.ProductUsecase.UpdateProduct(c.Request.Context(), &product); err != nil {
+		if strings.Contains(err.Error(), "violates foreign key constraint") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Gagal merubah data. Varian produk yang dihapus sedang digunakan dalam riwayat transaksi."})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

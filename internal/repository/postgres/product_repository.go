@@ -37,11 +37,24 @@ func (r *gormProductRepository) GetByID(ctx context.Context, id uuid.UUID, busin
 
 func (r *gormProductRepository) Update(ctx context.Context, p *domain.Product) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("product_id = ?", p.ID).Delete(&domain.Variant{}).Error; err != nil {
-			return err
+		var incomingVariantIDs []uuid.UUID
+		for _, v := range p.Variants {
+			if v.ID != uuid.Nil {
+				incomingVariantIDs = append(incomingVariantIDs, v.ID)
+			}
 		}
 
-		return tx.Save(p).Error
+		if len(incomingVariantIDs) > 0 {
+			if err := tx.Where("product_id = ? AND id NOT IN ?", p.ID, incomingVariantIDs).Delete(&domain.Variant{}).Error; err != nil {
+				return err
+			}
+		} else {
+			if err := tx.Where("product_id = ?", p.ID).Delete(&domain.Variant{}).Error; err != nil {
+				return err
+			}
+		}
+
+		return tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(p).Error
 	})
 }
 
