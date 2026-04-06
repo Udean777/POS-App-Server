@@ -59,6 +59,9 @@ func main() {
 	{
 		protected.POST("/products", productHandler.Create)
 		protected.GET("/products", productHandler.GetAll)
+		protected.GET("/products/:id", productHandler.GetByID)
+		protected.PUT("/products/:id", productHandler.Update)
+		protected.DELETE("/products/:id", productHandler.Delete)
 	}
 
 	port := os.Getenv("PORT")

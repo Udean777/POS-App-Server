@@ -46,3 +46,18 @@ func (u *productUsecase) AddProduct(ctx context.Context, p *domain.Product) erro
 func (u *productUsecase) GetAllProducts(ctx context.Context, businessID uuid.UUID) ([]domain.Product, error) {
 	return u.productRepo.Fetch(ctx, businessID)
 }
+
+func (u *productUsecase) GetProductByID(ctx context.Context, id uuid.UUID, businessID uuid.UUID) (*domain.Product, error) {
+	return u.productRepo.GetByID(ctx, id, businessID)
+}
+
+func (u *productUsecase) UpdateProduct(ctx context.Context, p *domain.Product) error {
+	if p.Name == "" {
+		return errors.New("nama produk tidak boleh kosong")
+	}
+	return u.productRepo.Update(ctx, p)
+}
+
+func (u *productUsecase) DeleteProduct(ctx context.Context, id uuid.UUID, businessID uuid.UUID) error {
+	return u.productRepo.Delete(ctx, id, businessID)
+}
