@@ -30,9 +30,15 @@ type Variant struct {
 type ProductRepository interface {
 	Create(ctx context.Context, p *Product) error
 	Fetch(ctx context.Context, businessID uuid.UUID) ([]Product, error)
+	GetByID(ctx context.Context, id uuid.UUID, businessID uuid.UUID) (*Product, error)
+	Update(ctx context.Context, p *Product) error
+	Delete(ctx context.Context, id uuid.UUID, businessID uuid.UUID) error
 }
 
 type ProductUsecase interface {
 	AddProduct(ctx context.Context, p *Product) error
 	GetAllProducts(ctx context.Context, businessID uuid.UUID) ([]Product, error)
+	GetProductByID(ctx context.Context, id uuid.UUID, businessID uuid.UUID) (*Product, error)
+	UpdateProduct(ctx context.Context, p *Product) error
+	DeleteProduct(ctx context.Context, id uuid.UUID, businessID uuid.UUID) error
 }

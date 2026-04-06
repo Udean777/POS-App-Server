@@ -68,3 +68,54 @@ func (h *ProductHandler) GetAll(c *gin.Context) {
 
 	c.JSON(http.StatusOK, products)
 }
+
+func (h *ProductHandler) GetByID(c *gin.Context) {
+	id, _ := uuid.Parse(c.Param("id"))
+	businessID, _ := uuid.Parse(c.GetString("business_id"))
+
+	product, err := h.ProductUsecase.GetProductByID(c.Request.Context(), id, businessID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Produk tidak ditemukan"})
+		return
+	}
+	c.JSON(http.StatusOK, product)
+}
+
+func (h *ProductHandler) Update(c *gin.Context) {
+	id, _ := uuid.Parse(c.Param("id"))
+	businessID, _ := uuid.Parse(c.GetString("business_id"))
+
+	var product domain.Product
+	if err := c.ShouldBindJSON(&product); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid"})
+		return
+	}
+
+	product.ID = id
+	product.BusinessID = businessID
+	for i := range product.Variants {
+		product.Variants[i].ProductID = id
+		product.Variants[i].BusinessID = businessID
+	}
+
+	if err := h.ProductUsecase.UpdateProduct(c.Request.Context(), &product); err != nil {
+		if strings.Contains(err.Error(), "violates foreign key constraint") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Gagal merubah data. Varian produk yang dihapus sedang digunakan dalam riwayat transaksi."})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, product)
+}
+
+func (h *ProductHandler) Delete(c *gin.Context) {
+	id, _ := uuid.Parse(c.Param("id"))
+	businessID, _ := uuid.Parse(c.GetString("business_id"))
+
+	if err := h.ProductUsecase.DeleteProduct(c.Request.Context(), id, businessID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus produk"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Produk berhasil dihapus"})
+}

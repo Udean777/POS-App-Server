@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/sajudin/pos-app-server/internal/domain"
 	"github.com/sajudin/pos-app-server/pkg/utils"
 )
@@ -28,7 +29,8 @@ func (u *authUsecase) Login(ctx context.Context, email string, password string) 
 		return "", errors.New("password salah")
 	}
 
-	token, err := utils.GenerateToken(user.ID.String(), user.BusinessID.String(), u.secret)
+	// Update token generation to include Role
+	token, err := utils.GenerateToken(user.ID.String(), user.BusinessID.String(), user.Role, u.secret)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +47,63 @@ func (u *authUsecase) Register(ctx context.Context, email, password, bizName str
 	user := &domain.User{
 		Email:    email,
 		Password: hashedPassword,
+		Role:     "OWNER", // Default role for registration is OWNER
 	}
 
 	return u.userRepo.Create(ctx, user, bizName)
+}
+
+func (u *authUsecase) GetProfile(ctx context.Context, userID uuid.UUID) (*domain.UserResponse, error) {
+	user, err := u.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, errors.New("profil tidak ditemukan")
+	}
+
+	return &domain.UserResponse{
+		ID:              user.ID,
+		Email:           user.Email,
+		BusinessID:      user.Business.ID,
+		BusinessName:    user.Business.Name,
+		BusinessType:    user.Business.Type,
+		BusinessAddress: user.Business.Address,
+		Role:            user.Role,
+	}, nil
+}
+
+func (u *authUsecase) CreateStaff(ctx context.Context, email, password string, businessID uuid.UUID) error {
+	hashedPassword, err := utils.HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	user := &domain.User{
+		Email:      email,
+		Password:   hashedPassword,
+		BusinessID: businessID,
+		Role:       "STAFF",
+	}
+
+	return u.userRepo.AddUser(ctx, user)
+}
+
+func (u *authUsecase) GetStaff(ctx context.Context, businessID uuid.UUID) ([]domain.UserResponse, error) {
+	users, err := u.userRepo.GetByBusinessID(ctx, businessID)
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []domain.UserResponse
+	for _, user := range users {
+		responses = append(responses, domain.UserResponse{
+			ID:              user.ID,
+			Email:           user.Email,
+			BusinessID:      user.BusinessID,
+			Role:            user.Role,
+			BusinessName:    user.Business.Name,
+			BusinessType:    user.Business.Type,
+			BusinessAddress: user.Business.Address,
+		})
+	}
+
+	return responses, nil
 }

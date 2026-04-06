@@ -10,13 +10,15 @@ import (
 type JWTClaims struct {
 	UserID     string `json:"user_id"`
 	BusinessID string `json:"business_id"`
+	Role       string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID, businessID, secret string) (string, error) {
+func GenerateToken(userID, businessID, role, secret string) (string, error) {
 	claims := &JWTClaims{
 		UserID:     userID,
 		BusinessID: businessID,
+		Role:       role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Token berlaku 24 jam
 		},
