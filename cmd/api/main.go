@@ -59,11 +59,12 @@ func main() {
 
 	// Repositories
 	userRepo := repo.NewGormUserRepository(db)
+	businessRepo := repo.NewGormBusinessRepository(db)
 	productRepo := repo.NewGormProductRepository(db)
 	txRepo := repo.NewGormTransactionRepository(db)
 
 	// Usecases
-	authUsecase := usecase.NewAuthUsecase(userRepo, secret)
+	authUsecase := usecase.NewAuthUsecase(userRepo, businessRepo, secret)
 	productUsecase := usecase.NewProductUsecase(productRepo)
 	txUsecase := usecase.NewTransactionUsecase(txRepo, productRepo)
 
@@ -90,6 +91,7 @@ func main() {
 		{
 			ownerOnly.POST("/staff", authHandler.CreateStaff)
 			ownerOnly.GET("/staff", authHandler.GetStaff)
+			ownerOnly.PUT("/business", authHandler.UpdateBusiness)
 		}
 
 		// Product Routes

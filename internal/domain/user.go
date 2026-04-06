@@ -22,6 +22,8 @@ type Business struct {
 	Name      string    `gorm:"not null" json:"name"`
 	Type      string    `gorm:"not null" json:"type"`
 	Address   string    `json:"address"`
+	Phone     string    `json:"phone"`
+	LogoURL   string    `json:"logo_url"`
 	Users     []User    `gorm:"foreignKey:BusinessID" json:"users"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -44,10 +46,24 @@ type UserRepository interface {
 	AddUser(ctx context.Context, user *User) error
 }
 
+type BusinessRepository interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*Business, error)
+	Update(ctx context.Context, b *Business) error
+}
+
 type AuthUsecase interface {
 	Login(ctx context.Context, email string, password string) (string, error)
 	Register(ctx context.Context, email, password, bizName string) error
 	GetProfile(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
 	CreateStaff(ctx context.Context, email, password string, businessID uuid.UUID) error
 	GetStaff(ctx context.Context, businessID uuid.UUID) ([]UserResponse, error)
+	UpdateBusiness(ctx context.Context, businessID uuid.UUID, req UpdateBusinessRequest) error
+}
+
+type UpdateBusinessRequest struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Address string `json:"address"`
+	Phone   string `json:"phone"`
+	LogoURL string `json:"logo_url"`
 }

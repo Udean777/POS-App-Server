@@ -10,13 +10,13 @@ import (
 )
 
 type authUsecase struct {
-	userRepo domain.UserRepository
-	// businessRepo domain.BusinessRepository
-	secret string
+	userRepo     domain.UserRepository
+	businessRepo domain.BusinessRepository
+	secret       string
 }
 
-func NewAuthUsecase(ur domain.UserRepository, secret string) domain.AuthUsecase {
-	return &authUsecase{userRepo: ur, secret: secret}
+func NewAuthUsecase(ur domain.UserRepository, br domain.BusinessRepository, secret string) domain.AuthUsecase {
+	return &authUsecase{userRepo: ur, businessRepo: br, secret: secret}
 }
 
 func (u *authUsecase) Login(ctx context.Context, email string, password string) (string, error) {
@@ -106,4 +106,29 @@ func (u *authUsecase) GetStaff(ctx context.Context, businessID uuid.UUID) ([]dom
 	}
 
 	return responses, nil
+}
+
+func (u *authUsecase) UpdateBusiness(ctx context.Context, businessID uuid.UUID, req domain.UpdateBusinessRequest) error {
+	biz, err := u.businessRepo.GetByID(ctx, businessID)
+	if err != nil {
+		return errors.New("bisnis tidak ditemukan")
+	}
+
+	if req.Name != "" {
+		biz.Name = req.Name
+	}
+	if req.Type != "" {
+		biz.Type = req.Type
+	}
+	if req.Address != "" {
+		biz.Address = req.Address
+	}
+	if req.Phone != "" {
+		biz.Phone = req.Phone
+	}
+	if req.LogoURL != "" {
+		biz.LogoURL = req.LogoURL
+	}
+
+	return u.businessRepo.Update(ctx, biz)
 }
