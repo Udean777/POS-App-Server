@@ -28,7 +28,14 @@ func main() {
 		log.Fatal("Gagal konek ke database:", err)
 	}
 
-	db.AutoMigrate(&domain.Business{}, &domain.User{}, &domain.Product{}, &domain.Variant{})
+	db.AutoMigrate(
+		&domain.Business{},
+		&domain.User{},
+		&domain.Product{},
+		&domain.Variant{},
+		&domain.Transaction{},
+		&domain.TransactionItem{},
+	)
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
@@ -37,14 +44,17 @@ func main() {
 	// Repositories
 	userRepo := repo.NewGormUserRepository(db)
 	productRepo := repo.NewGormProductRepository(db)
+	txRepo := repo.NewGormTransactionRepository(db)
 
 	// Usecases
 	authUsecase := usecase.NewAuthUsecase(userRepo, secret)
 	productUsecase := usecase.NewProductUsecase(productRepo)
+	txUsecase := usecase.NewTransactionUsecase(txRepo, productRepo)
 
 	// Handlers
 	authHandler := http.AuthHandler{AuthUsecase: authUsecase}
 	productHandler := http.NewProductHandler(productUsecase)
+	txHandler := http.NewTransactionHandler(txUsecase)
 
 	// Public Routes
 	v1 := r.Group("/api/v1")
@@ -66,11 +76,16 @@ func main() {
 			ownerOnly.GET("/staff", authHandler.GetStaff)
 		}
 
+		// Product Routes
 		protected.POST("/products", productHandler.Create)
 		protected.GET("/products", productHandler.GetAll)
 		protected.GET("/products/:id", productHandler.GetByID)
 		protected.PUT("/products/:id", productHandler.Update)
 		protected.DELETE("/products/:id", productHandler.Delete)
+
+		// Transaction Routes
+		protected.POST("/transactions", txHandler.Checkout)
+		protected.GET("/transactions", txHandler.GetAll)
 	}
 
 	port := os.Getenv("PORT")
