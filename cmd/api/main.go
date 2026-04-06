@@ -57,6 +57,7 @@ func main() {
 	protected := v1.Group("/")
 	protected.Use(middleware.AuthMiddleware(secret))
 	{
+		protected.GET("/me", authHandler.GetProfile)
 		protected.POST("/products", productHandler.Create)
 		protected.GET("/products", productHandler.GetAll)
 		protected.GET("/products/:id", productHandler.GetByID)

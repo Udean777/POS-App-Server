@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sajudin/pos-app-server/internal/domain"
 )
 
@@ -55,4 +56,19 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "registrasi berhasil"})
+}
+
+func (h *AuthHandler) GetProfile(c *gin.Context) {
+	// Ambil user_id dari context middleware
+	userIDStr := c.GetString("user_id")
+	userID, _ := uuid.Parse(userIDStr)
+
+	// Panggil usecase untuk ambil data user & bisnis
+	user, err := h.AuthUsecase.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Profil tidak ditemukan"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
