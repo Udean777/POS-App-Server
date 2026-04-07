@@ -101,6 +101,7 @@ func main() {
 		protected.GET("/products/:id", productHandler.GetByID)
 		protected.PUT("/products/:id", productHandler.Update)
 		protected.DELETE("/products/:id", productHandler.Delete)
+		protected.PATCH("/products/variants/:variantId/restock", productHandler.Restock)
 
 		// Transaction Routes
 		protected.POST("/transactions", txHandler.Checkout)

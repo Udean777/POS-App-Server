@@ -66,11 +66,13 @@ func (u *authUsecase) GetProfile(ctx context.Context, userID uuid.UUID) (*domain
 		BusinessName:    user.Business.Name,
 		BusinessType:    user.Business.Type,
 		BusinessAddress: user.Business.Address,
+		BusinessPhone:   user.Business.Phone,
+		BusinessLogoURL: user.Business.LogoURL,
 		Role:            user.Role,
 	}, nil
 }
 
-func (u *authUsecase) CreateStaff(ctx context.Context, email, password string, businessID uuid.UUID) error {
+func (u *authUsecase) CreateStaff(ctx context.Context, email, password, role string, businessID uuid.UUID) error {
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return err
@@ -80,7 +82,7 @@ func (u *authUsecase) CreateStaff(ctx context.Context, email, password string, b
 		Email:      email,
 		Password:   hashedPassword,
 		BusinessID: businessID,
-		Role:       "STAFF",
+		Role:       role,
 	}
 
 	return u.userRepo.AddUser(ctx, user)
@@ -102,6 +104,8 @@ func (u *authUsecase) GetStaff(ctx context.Context, businessID uuid.UUID) ([]dom
 			BusinessName:    user.Business.Name,
 			BusinessType:    user.Business.Type,
 			BusinessAddress: user.Business.Address,
+			BusinessPhone:   user.Business.Phone,
+			BusinessLogoURL: user.Business.LogoURL,
 		})
 	}
 

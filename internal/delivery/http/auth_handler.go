@@ -75,6 +75,7 @@ func (h *AuthHandler) CreateStaff(c *gin.Context) {
 	var req struct {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required,min=6"`
+		Role     string `json:"role" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,7 +87,7 @@ func (h *AuthHandler) CreateStaff(c *gin.Context) {
 	bizIDStr := c.GetString("business_id")
 	businessID, _ := uuid.Parse(bizIDStr)
 
-	err := h.AuthUsecase.CreateStaff(c.Request.Context(), req.Email, req.Password, businessID)
+	err := h.AuthUsecase.CreateStaff(c.Request.Context(), req.Email, req.Password, req.Role, businessID)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Email sudah terdaftar"})

@@ -67,3 +67,10 @@ func (r *gormProductRepository) Delete(ctx context.Context, id uuid.UUID, busine
 		return tx.Where("id = ? AND business_id = ?", id, businessID).Delete(&domain.Product{}).Error
 	})
 }
+
+func (r *gormProductRepository) RestockVariant(ctx context.Context, variantID uuid.UUID, businessID uuid.UUID, quantity int) error {
+	return r.db.WithContext(ctx).
+		Model(&domain.Variant{}).
+		Where("id = ? AND business_id = ?", variantID, businessID).
+		UpdateColumn("stock", gorm.Expr("stock + ?", quantity)).Error
+}

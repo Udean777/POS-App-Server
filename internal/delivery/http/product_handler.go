@@ -159,3 +159,34 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Produk berhasil dihapus"})
 }
+
+func (h *ProductHandler) Restock(c *gin.Context) {
+	variantIDStr := c.Param("variantId")
+	variantID, err := uuid.Parse(variantIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "variantId tidak valid"})
+		return
+	}
+
+	businessIDStr := c.GetString("business_id")
+	businessID, err := uuid.Parse(businessIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "business_id tidak valid"})
+		return
+	}
+
+	var req struct {
+		Quantity int `json:"quantity"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid"})
+		return
+	}
+
+	if err := h.ProductUsecase.RestockVariant(c.Request.Context(), variantID, businessID, req.Quantity); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Restock berhasil"})
+}

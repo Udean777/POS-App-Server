@@ -35,6 +35,8 @@ type UserResponse struct {
 	BusinessName    string    `json:"business_name"`
 	BusinessType    string    `json:"business_type"`
 	BusinessAddress string    `json:"business_address"`
+	BusinessPhone   string    `json:"business_phone"`
+	BusinessLogoURL string    `json:"business_logo_url"`
 	Role            string    `json:"role"`
 }
 
@@ -55,7 +57,7 @@ type AuthUsecase interface {
 	Login(ctx context.Context, email string, password string) (string, error)
 	Register(ctx context.Context, email, password, bizName string) error
 	GetProfile(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
-	CreateStaff(ctx context.Context, email, password string, businessID uuid.UUID) error
+	CreateStaff(ctx context.Context, email, password, role string, businessID uuid.UUID) error
 	GetStaff(ctx context.Context, businessID uuid.UUID) ([]UserResponse, error)
 	UpdateBusiness(ctx context.Context, businessID uuid.UUID, req UpdateBusinessRequest) error
 }

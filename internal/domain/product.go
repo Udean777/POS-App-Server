@@ -34,6 +34,7 @@ type ProductRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID, businessID uuid.UUID) (*Product, error)
 	Update(ctx context.Context, p *Product) error
 	Delete(ctx context.Context, id uuid.UUID, businessID uuid.UUID) error
+	RestockVariant(ctx context.Context, variantID uuid.UUID, businessID uuid.UUID, quantity int) error
 }
 
 type ProductUsecase interface {
@@ -42,6 +43,7 @@ type ProductUsecase interface {
 	GetProductByID(ctx context.Context, id uuid.UUID, businessID uuid.UUID) (*Product, error)
 	UpdateProduct(ctx context.Context, p *Product) error
 	DeleteProduct(ctx context.Context, id uuid.UUID, businessID uuid.UUID) error
+	RestockVariant(ctx context.Context, variantID uuid.UUID, businessID uuid.UUID, quantity int) error
 }
 
 type StorageService interface {
