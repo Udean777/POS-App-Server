@@ -61,3 +61,10 @@ func (u *productUsecase) UpdateProduct(ctx context.Context, p *domain.Product) e
 func (u *productUsecase) DeleteProduct(ctx context.Context, id uuid.UUID, businessID uuid.UUID) error {
 	return u.productRepo.Delete(ctx, id, businessID)
 }
+
+func (u *productUsecase) RestockVariant(ctx context.Context, variantID uuid.UUID, businessID uuid.UUID, quantity int) error {
+	if quantity <= 0 {
+		return errors.New("jumlah restock harus lebih dari 0")
+	}
+	return u.productRepo.RestockVariant(ctx, variantID, businessID, quantity)
+}

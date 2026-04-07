@@ -10,13 +10,13 @@ import (
 )
 
 type authUsecase struct {
-	userRepo domain.UserRepository
-	// businessRepo domain.BusinessRepository
-	secret string
+	userRepo     domain.UserRepository
+	businessRepo domain.BusinessRepository
+	secret       string
 }
 
-func NewAuthUsecase(ur domain.UserRepository, secret string) domain.AuthUsecase {
-	return &authUsecase{userRepo: ur, secret: secret}
+func NewAuthUsecase(ur domain.UserRepository, br domain.BusinessRepository, secret string) domain.AuthUsecase {
+	return &authUsecase{userRepo: ur, businessRepo: br, secret: secret}
 }
 
 func (u *authUsecase) Login(ctx context.Context, email string, password string) (string, error) {
@@ -66,11 +66,13 @@ func (u *authUsecase) GetProfile(ctx context.Context, userID uuid.UUID) (*domain
 		BusinessName:    user.Business.Name,
 		BusinessType:    user.Business.Type,
 		BusinessAddress: user.Business.Address,
+		BusinessPhone:   user.Business.Phone,
+		BusinessLogoURL: user.Business.LogoURL,
 		Role:            user.Role,
 	}, nil
 }
 
-func (u *authUsecase) CreateStaff(ctx context.Context, email, password string, businessID uuid.UUID) error {
+func (u *authUsecase) CreateStaff(ctx context.Context, email, password, role string, businessID uuid.UUID) error {
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return err
@@ -80,7 +82,7 @@ func (u *authUsecase) CreateStaff(ctx context.Context, email, password string, b
 		Email:      email,
 		Password:   hashedPassword,
 		BusinessID: businessID,
-		Role:       "STAFF",
+		Role:       role,
 	}
 
 	return u.userRepo.AddUser(ctx, user)
@@ -102,8 +104,35 @@ func (u *authUsecase) GetStaff(ctx context.Context, businessID uuid.UUID) ([]dom
 			BusinessName:    user.Business.Name,
 			BusinessType:    user.Business.Type,
 			BusinessAddress: user.Business.Address,
+			BusinessPhone:   user.Business.Phone,
+			BusinessLogoURL: user.Business.LogoURL,
 		})
 	}
 
 	return responses, nil
+}
+
+func (u *authUsecase) UpdateBusiness(ctx context.Context, businessID uuid.UUID, req domain.UpdateBusinessRequest) error {
+	biz, err := u.businessRepo.GetByID(ctx, businessID)
+	if err != nil {
+		return errors.New("bisnis tidak ditemukan")
+	}
+
+	if req.Name != "" {
+		biz.Name = req.Name
+	}
+	if req.Type != "" {
+		biz.Type = req.Type
+	}
+	if req.Address != "" {
+		biz.Address = req.Address
+	}
+	if req.Phone != "" {
+		biz.Phone = req.Phone
+	}
+	if req.LogoURL != "" {
+		biz.LogoURL = req.LogoURL
+	}
+
+	return u.businessRepo.Update(ctx, biz)
 }
