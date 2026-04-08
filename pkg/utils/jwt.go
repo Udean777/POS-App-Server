@@ -14,13 +14,27 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID, businessID, role, secret string) (string, error) {
+func GenerateAccessToken(userID, businessID, role, secret string) (string, error) {
 	claims := &JWTClaims{
 		UserID:     userID,
 		BusinessID: businessID,
 		Role:       role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Token berlaku 24 jam
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)), // Access Token cuma 15 menit
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
+}
+
+func GenerateRefreshToken(userID, businessID, role, secret string) (string, error) {
+	claims := &JWTClaims{
+		UserID:     userID,
+		BusinessID: businessID,
+		Role:       role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)), // Refresh Token 7 hari
 		},
 	}
 
