@@ -17,6 +17,17 @@ func NewStaffUsecase(ur domain.UserRepository) domain.StaffUsecase {
 }
 
 func (u *staffUsecase) CreateStaff(ctx context.Context, email, password, role string, businessID uuid.UUID) error {
+	// Pengecekan proaktif: Apakah email sudah digunakan?
+	existingUser, _ := u.userRepo.GetByEmail(ctx, email)
+	if existingUser != nil && existingUser.Email != "" {
+		// Jika terdaftar di bisnis yang sama
+		if existingUser.BusinessID == businessID {
+			return domain.ErrEmailAlreadyExists
+		}
+		// Jika terdaftar di bisnis lain
+		return domain.ErrEmailRegisteredByOtherBusiness
+	}
+
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return err

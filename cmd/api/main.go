@@ -15,6 +15,7 @@ import (
 	repo "github.com/sajudin/pos-app-server/internal/repository/postgres"
 	"github.com/sajudin/pos-app-server/internal/service"
 	"github.com/sajudin/pos-app-server/internal/usecase"
+	"github.com/sajudin/pos-app-server/pkg/mail"
 	"gorm.io/driver/postgres"
 )
 
@@ -38,6 +39,7 @@ func main() {
 		&domain.Transaction{},
 		&domain.TransactionItem{},
 		&domain.RefreshToken{},
+		&domain.VerificationCode{},
 	)
 
 	r := gin.Default()
@@ -62,11 +64,15 @@ func main() {
 	userRepo := repo.NewGormUserRepository(db)
 	businessRepo := repo.NewGormBusinessRepository(db)
 	refreshTokenRepo := repo.NewGormRefreshTokenRepository(db)
+	vcRepo := repo.NewGormVerificationCodeRepository(db)
 	productRepo := repo.NewGormProductRepository(db)
 	txRepo := repo.NewGormTransactionRepository(db)
 
+	// Services
+	mailer := mail.NewSMTPMailer()
+
 	// Usecases
-	authUsecase := usecase.NewAuthUsecase(userRepo, refreshTokenRepo, secret)
+	authUsecase := usecase.NewAuthUsecase(userRepo, refreshTokenRepo, vcRepo, mailer, secret)
 	staffUsecase := usecase.NewStaffUsecase(userRepo)
 	businessUsecase := usecase.NewBusinessUsecase(businessRepo)
 	productUsecase := usecase.NewProductUsecase(productRepo)
@@ -85,6 +91,10 @@ func main() {
 		v1.POST("/auth/register", authHandler.Register)
 		v1.POST("/auth/login", authHandler.Login)
 		v1.POST("/auth/refresh", authHandler.Refresh)
+		v1.POST("/auth/verify-otp", authHandler.VerifyOTP)
+		v1.POST("/auth/resend-otp", authHandler.ResendOTP)
+		v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
+		v1.POST("/auth/reset-password", authHandler.ResetPassword)
 	}
 
 	// Protected Routes

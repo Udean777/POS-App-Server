@@ -1,8 +1,8 @@
 package http
 
 import (
+	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -34,8 +34,8 @@ func (h *StaffHandler) CreateStaff(c *gin.Context) {
 
 	err := h.StaffUsecase.CreateStaff(c.Request.Context(), req.Email, req.Password, req.Role, businessID)
 	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-			c.JSON(http.StatusConflict, gin.H{"error": "Email sudah terdaftar"})
+		if errors.Is(err, domain.ErrEmailAlreadyExists) || errors.Is(err, domain.ErrEmailRegisteredByOtherBusiness) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mendaftarkan staf"})

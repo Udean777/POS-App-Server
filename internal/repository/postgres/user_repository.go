@@ -39,7 +39,11 @@ func (r *gormUserRepository) Create(ctx context.Context, u *domain.User, busines
 
 func (r *gormUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user domain.User
-	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	// Menggunakan Find + Limit agar tidak memicu log 'record not found' yang membingungkan
+	err := r.db.WithContext(ctx).Where("email = ?", email).Limit(1).Find(&user).Error
+	if err == nil && user.Email == "" {
+		return nil, gorm.ErrRecordNotFound
+	}
 	return &user, err
 }
 
@@ -62,4 +66,12 @@ func (r *gormUserRepository) GetByBusinessID(ctx context.Context, businessID uui
 
 func (r *gormUserRepository) AddUser(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
+}
+
+func (r *gormUserRepository) Update(ctx context.Context, user *domain.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
+}
+
+func (r *gormUserRepository) UpdatePassword(ctx context.Context, userID uuid.UUID, hashedPassword string) error {
+	return r.db.WithContext(ctx).Model(&domain.User{}).Where("id = ?", userID).Update("password", hashedPassword).Error
 }
