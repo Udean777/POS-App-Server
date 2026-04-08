@@ -40,6 +40,11 @@ type UserResponse struct {
 	Role            string    `json:"role"`
 }
 
+type TokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 type UserRepository interface {
 	Create(ctx context.Context, u *User, businessName string) error
 	GetByEmail(ctx context.Context, email string) (*User, error)
@@ -54,11 +59,18 @@ type BusinessRepository interface {
 }
 
 type AuthUsecase interface {
-	Login(ctx context.Context, email string, password string) (string, error)
+	Login(ctx context.Context, email string, password string) (*TokenResponse, error)
+	Refresh(ctx context.Context, refreshToken string) (*TokenResponse, error)
 	Register(ctx context.Context, email, password, bizName string) error
 	GetProfile(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
+}
+
+type StaffUsecase interface {
 	CreateStaff(ctx context.Context, email, password, role string, businessID uuid.UUID) error
 	GetStaff(ctx context.Context, businessID uuid.UUID) ([]UserResponse, error)
+}
+
+type BusinessUsecase interface {
 	UpdateBusiness(ctx context.Context, businessID uuid.UUID, req UpdateBusinessRequest) error
 }
 

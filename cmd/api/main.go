@@ -37,6 +37,7 @@ func main() {
 		&domain.Variant{},
 		&domain.Transaction{},
 		&domain.TransactionItem{},
+		&domain.RefreshToken{},
 	)
 
 	r := gin.Default()
@@ -60,16 +61,21 @@ func main() {
 	// Repositories
 	userRepo := repo.NewGormUserRepository(db)
 	businessRepo := repo.NewGormBusinessRepository(db)
+	refreshTokenRepo := repo.NewGormRefreshTokenRepository(db)
 	productRepo := repo.NewGormProductRepository(db)
 	txRepo := repo.NewGormTransactionRepository(db)
 
 	// Usecases
-	authUsecase := usecase.NewAuthUsecase(userRepo, businessRepo, secret)
+	authUsecase := usecase.NewAuthUsecase(userRepo, refreshTokenRepo, secret)
+	staffUsecase := usecase.NewStaffUsecase(userRepo)
+	businessUsecase := usecase.NewBusinessUsecase(businessRepo)
 	productUsecase := usecase.NewProductUsecase(productRepo)
 	txUsecase := usecase.NewTransactionUsecase(txRepo, productRepo)
 
 	// Handlers
 	authHandler := http.AuthHandler{AuthUsecase: authUsecase}
+	staffHandler := http.NewStaffHandler(staffUsecase)
+	businessHandler := http.NewBusinessHandler(businessUsecase)
 	productHandler := http.NewProductHandler(productUsecase, storageService)
 	txHandler := http.NewTransactionHandler(txUsecase)
 
@@ -78,6 +84,7 @@ func main() {
 	{
 		v1.POST("/auth/register", authHandler.Register)
 		v1.POST("/auth/login", authHandler.Login)
+		v1.POST("/auth/refresh", authHandler.Refresh)
 	}
 
 	// Protected Routes
@@ -87,11 +94,11 @@ func main() {
 		protected.GET("/me", authHandler.GetProfile)
 
 		// Staff Management (Owner Only)
-		ownerOnly := protected.Group("/auth", middleware.RoleMiddleware("OWNER"))
+		ownerOnly := protected.Group("/", middleware.RoleMiddleware("OWNER"))
 		{
-			ownerOnly.POST("/staff", authHandler.CreateStaff)
-			ownerOnly.GET("/staff", authHandler.GetStaff)
-			ownerOnly.PUT("/business", authHandler.UpdateBusiness)
+			ownerOnly.POST("/staff", staffHandler.CreateStaff)
+			ownerOnly.GET("/staff", staffHandler.GetStaff)
+			ownerOnly.PUT("/business", businessHandler.UpdateBusiness)
 		}
 
 		// Product Routes
